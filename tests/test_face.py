@@ -100,6 +100,9 @@ async def test_face_verify_wrong_data(client: AsyncClient):
     assert resp.json()["verified"] is False
 
 
+
+
+
 @pytest.mark.asyncio
 async def test_face_verify_no_registration(client: AsyncClient):
     token = await get_admin_token(client)

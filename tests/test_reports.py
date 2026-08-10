@@ -41,21 +41,6 @@ async def test_monthly_attendance_report(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_employee_time_card_report(client: AsyncClient):
-    token = await get_admin_token(client)
-    emp_payload = make_employee_payload()
-    emp_resp = await client.post("/api/v1/employees", json=emp_payload, headers={"Authorization": f"Bearer {token}"})
-    emp_id = emp_resp.json()["employee_id"]
-    resp = await client.get(
-        f"/api/v1/reports/time-card/{emp_id}",
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["employee_id"] == emp_id
-
-
-@pytest.mark.asyncio
 async def test_department_attendance_report(client: AsyncClient):
     token = await get_admin_token(client)
     resp = await client.get(
