@@ -1,7 +1,7 @@
-# Reports router: daily, monthly, time-card, department attendance, CSV export
+# Reports router: daily, monthly, department attendance, CSV export
 import os
 from dotenv import load_dotenv
-load_dotenv('.env_0421df12-3f2a-4fe0-beb1-bb42dc42c8bd', override=True)
+load_dotenv('.env_22412b214a31e30d', override=True)
 
 import csv
 import io
@@ -17,7 +17,7 @@ from app.database import get_db
 from app.models import Employee, Attendance, AttendanceStatus, User
 from app.schemas import (
     AttendanceOut, DailyAttendanceReport, MonthlyAttendanceReport,
-    DepartmentAttendanceReport, TimeCardResponse,
+    DepartmentAttendanceReport,
 )
 from app.core.auth import get_current_user, require_roles
 
@@ -130,53 +130,6 @@ async def monthly_attendance_report(
         year=year,
         total_employees=len(records),
         records=[_to_att_out(r) for r in records],
-    )
-
-
-@router.get("/time-card/{employee_id}", response_model=TimeCardResponse)
-async def employee_time_card_report(
-    employee_id: str,
-    start_date: Optional[str] = Query(None),
-    end_date: Optional[str] = Query(None),
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Time card report for a specific employee."""
-    emp_result = await db.execute(select(Employee).where(Employee.employee_id == employee_id))
-    emp = emp_result.scalar_one_or_none()
-    if not emp:
-        raise HTTPException(status_code=404, detail={"success": False, "message": "Employee not found"})
-
-    att_query = select(Attendance).where(Attendance.employee_id == emp.id)
-    if start_date:
-        try:
-            att_query = att_query.where(Attendance.attendance_date >= date.fromisoformat(start_date))
-        except ValueError:
-            pass
-    if end_date:
-        try:
-            att_query = att_query.where(Attendance.attendance_date <= date.fromisoformat(end_date))
-        except ValueError:
-            pass
-
-    att_result = await db.execute(att_query)
-    records = att_result.scalars().all()
-
-    present_days = sum(1 for r in records if r.status in (AttendanceStatus.PRESENT, AttendanceStatus.LATE))
-    absent_days = sum(1 for r in records if r.status == AttendanceStatus.ABSENT)
-    late_days = sum(1 for r in records if r.status == AttendanceStatus.LATE)
-    total_hours = sum(r.working_hours for r in records if r.working_hours is not None)
-    avg_hours = total_hours / present_days if present_days > 0 else 0.0
-
-    return TimeCardResponse(
-        employee_id=emp.employee_id,
-        employee_name=emp.name,
-        total_working_days=len(records),
-        present_days=present_days,
-        absent_days=absent_days,
-        late_days=late_days,
-        total_working_hours=_format_hours(total_hours),
-        average_working_hours=_format_hours(avg_hours),
     )
 
 

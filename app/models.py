@@ -1,7 +1,7 @@
 # SQLAlchemy ORM models for Face Attendance app
 import os
 from dotenv import load_dotenv
-load_dotenv('.env_0421df12-3f2a-4fe0-beb1-bb42dc42c8bd', override=True)
+load_dotenv('.env_22412b214a31e30d', override=True)
 
 import enum
 from datetime import datetime, date, time
