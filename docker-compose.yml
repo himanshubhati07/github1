@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: gen_f07875928c
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser -d gen_f07875928c"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    ports:
+      - "53677:53677"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://myuser:mypassword@db:5432/gen_f07875928c
+      SECRET_KEY: face-attendance-super-secret-key-change-in-prod
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      LATE_THRESHOLD: "09:00"
+      PORT: 53677
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
