@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: attendance_db
+    environment:
+      POSTGRES_DB: gen_054b6290d0
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser -d gen_054b6290d0"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: attendance_app
+    ports:
+      - "55513:55513"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/gen_054b6290d0
+      SPRING_DATASOURCE_USERNAME: myuser
+      SPRING_DATASOURCE_PASSWORD: mypassword
+      JWT_SECRET: EmployeeAttendanceManagementSystemSecretKey2024ForHS256Algorithm!@#$%
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
