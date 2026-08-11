@@ -41,7 +41,6 @@ com/example/app/dto/ApiResponse.class
 com/example/app/repository/DepartmentRepository.class
 com/example/app/controller/FaceController.class
 com/example/app/dto/RegisterRequest.class
-com/example/app/controller/TimeCardController.class
 com/example/app/config/SecurityConfig.class
 com/example/app/service/AttendanceService.class
 com/example/app/entity/Employee$EmpStatus.class
