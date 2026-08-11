@@ -1,5 +1,6 @@
 package com.example.app.service;
 
+import com.example.app.dto.FaceEditRequest;
 import com.example.app.dto.FaceRegisterRequest;
 import com.example.app.dto.FaceVerifyRequest;
 import com.example.app.dto.FaceVerifyResponse;
@@ -68,6 +69,29 @@ public class FaceService {
                 request.getEmployeeId(),
                 employee.getName(),
                 verified ? "Face verified successfully" : "Face verification failed"
+        );
+    }
+
+    public Map<String, Object> updateFace(String employeeId, FaceEditRequest request) {
+        Employee employee = employeeRepository.findByEmployeeId(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found: " + employeeId));
+
+        if (employee.getStatus() == Employee.EmpStatus.INACTIVE) {
+            throw new IllegalStateException("Cannot update face for inactive employee");
+        }
+
+        FaceRegistration registration = faceRegistrationRepository.findByEmployeeId(employeeId)
+                .orElseThrow(() -> new RuntimeException("Face not registered for employee: " + employeeId));
+
+        registration.setFaceReference(generateFaceReference(request.getFaceData()));
+        FaceRegistration saved = faceRegistrationRepository.save(registration);
+
+        return Map.of(
+                "success", true,
+                "employeeId", employeeId,
+                "employeeName", employee.getName(),
+                "message", "Face updated successfully",
+                "updatedAt", saved.getUpdatedAt().toString()
         );
     }
 

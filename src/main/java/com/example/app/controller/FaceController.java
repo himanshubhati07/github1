@@ -32,4 +32,13 @@ public class FaceController {
         FaceVerifyResponse result = faceService.verifyFace(request);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
+
+    @PutMapping("/{employeeId}")
+    @Operation(summary = "Edit/update registered face data for an employee")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> editFace(
+            @PathVariable String employeeId,
+            @Valid @RequestBody FaceEditRequest request) {
+        Map<String, Object> result = faceService.updateFace(employeeId, request);
+        return ResponseEntity.ok(ApiResponse.success("Face updated successfully", result));
+    }
 }

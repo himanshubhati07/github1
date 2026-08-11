@@ -1,5 +1,5 @@
 #!/bin/bash
-SERVER_PORT=55513
+SERVER_PORT=55049
 
 echo "Building application..."
 mvn package -DskipTests -q
