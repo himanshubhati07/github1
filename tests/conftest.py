@@ -7,7 +7,10 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy.pool import NullPool
 from dotenv import load_dotenv
 
-load_dotenv('.env_0421df12-3f2a-4fe0-beb1-bb42dc42c8bd', override=True)
+load_dotenv('.env_22412b214a31e30d', override=True)
+
+# Signal to database.py to use NullPool (no persistent connections)
+os.environ["TESTING"] = "1"
 
 from app.main import app
 from app.database import Base, get_db

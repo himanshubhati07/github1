@@ -1,7 +1,7 @@
 # Database engine, session factory, and Base for Face Attendance app
 import os
 from dotenv import load_dotenv
-load_dotenv('.env_0421df12-3f2a-4fe0-beb1-bb42dc42c8bd', override=True)
+load_dotenv('.env_22412b214a31e30d', override=True)
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
@@ -20,14 +20,27 @@ def _to_async_url(url: str) -> str:
 
 DATABASE_URL = _to_async_url(os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL))
 
-engine = create_async_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,
-    pool_recycle=300,
-    pool_size=5,
-    max_overflow=10,
-    echo=False,
-)
+# Use NullPool during testing to avoid holding idle connections against
+# a shared PostgreSQL server with limited max_connections.
+import os as _os
+_testing = _os.getenv("TESTING", "0") == "1"
+
+if _testing:
+    from sqlalchemy.pool import NullPool
+    engine = create_async_engine(
+        DATABASE_URL,
+        poolclass=NullPool,
+        echo=False,
+    )
+else:
+    engine = create_async_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,
+        pool_recycle=300,
+        pool_size=2,
+        max_overflow=3,
+        echo=False,
+    )
 
 AsyncSessionLocal = async_sessionmaker(
     engine,
