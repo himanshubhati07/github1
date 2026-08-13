@@ -2,7 +2,7 @@
 # Start script for Face Attendance API
 set -e
 
-PORT=53677
+PORT=46375
 export PYTHONUNBUFFERED=1
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -20,4 +20,4 @@ echo "Installing dependencies..."
 pip install -r requirements.txt -q
 
 echo "Starting Face Attendance API on port $PORT..."
-exec uvicorn app.main:app --host 0.0.0.0 --port 53677 --reload
+exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT"

@@ -7,9 +7,6 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy.orm import DeclarativeBase
 from typing import AsyncGenerator
 
-DEFAULT_DATABASE_URL = "postgresql+asyncpg://myuser:mypassword@localhost:5432/gen_f07875928c"
-
-
 def _to_async_url(url: str) -> str:
     """Convert postgresql:// to postgresql+asyncpg:// if not already async."""
     if url.startswith("postgresql://") or url.startswith("postgres://"):
@@ -18,7 +15,7 @@ def _to_async_url(url: str) -> str:
     return url
 
 
-DATABASE_URL = _to_async_url(os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL))
+DATABASE_URL = _to_async_url(os.environ["DATABASE_URL"])
 
 # Use NullPool during testing to avoid holding idle connections against
 # a shared PostgreSQL server with limited max_connections.

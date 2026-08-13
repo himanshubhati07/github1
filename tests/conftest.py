@@ -16,7 +16,7 @@ from app.main import app
 from app.database import Base, get_db
 from app.models import *  # noqa: F401,F403
 
-MAIN_DB_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://myuser:mypassword@localhost:5432/gen_f07875928c")
+MAIN_DB_URL = os.environ["DATABASE_URL"]
 _parts = MAIN_DB_URL.rsplit("/", 1)
 TEST_DB_URL = (_parts[0] + "/" + _parts[1] + "_test") if len(_parts) == 2 else MAIN_DB_URL
 
