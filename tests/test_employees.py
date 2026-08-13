@@ -125,3 +125,54 @@ async def test_create_employee_unauthorized(client: AsyncClient):
     emp_payload = make_employee_payload()
     resp2 = await client.post("/api/v1/employees", json=emp_payload, headers={"Authorization": f"Bearer {token}"})
     assert resp2.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_search_endpoint_dedicated(client: AsyncClient):
+    """Test the dedicated /search endpoint with various filters."""
+    token = await get_admin_token(client)
+    payload = make_employee_payload(name="SearchableEmployee99", department="SearchDept")
+    await client.post("/api/v1/employees", json=payload, headers={"Authorization": f"Bearer {token}"})
+
+    # Search by name via q param
+    resp = await client.get(
+        "/api/v1/employees/search?q=SearchableEmployee99",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total"] >= 1
+
+    # Search by employee_id param
+    resp2 = await client.get(
+        f"/api/v1/employees/search?employee_id={payload['employee_id']}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp2.status_code == 200
+    assert resp2.json()["total"] >= 1
+
+    # Search by department
+    resp3 = await client.get(
+        "/api/v1/employees/search?department=SearchDept",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp3.status_code == 200
+    assert resp3.json()["total"] >= 1
+
+    # Search by status
+    resp4 = await client.get(
+        "/api/v1/employees/search?status=ACTIVE",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp4.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_list_employees_sort_by_whitelist(client: AsyncClient):
+    """Invalid sort_by should return 400."""
+    token = await get_admin_token(client)
+    resp = await client.get(
+        "/api/v1/employees?sort_by=invalid_column",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 400

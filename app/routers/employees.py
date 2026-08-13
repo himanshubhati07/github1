@@ -16,6 +16,9 @@ from app.core.auth import get_current_user, require_roles
 
 router = APIRouter(prefix="/employees", tags=["Employees"])
 
+# Whitelist of valid sort fields to prevent ORM attribute injection
+ALLOWED_SORT_FIELDS = {"id", "name", "email", "employee_id", "department", "designation", "status", "joining_date", "created_at", "updated_at"}
+
 
 @router.post("", response_model=EmployeeOut, status_code=status.HTTP_201_CREATED)
 async def create_employee(
@@ -100,7 +103,74 @@ async def list_employees(
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
 
-    # Sort
+    # Sort — whitelist check to prevent invalid column access
+    if sort_by and sort_by not in ALLOWED_SORT_FIELDS:
+        raise HTTPException(
+            status_code=400,
+            detail={"success": False, "message": f"Invalid sort_by value. Supported: {sorted(ALLOWED_SORT_FIELDS)}", "error_code": "INVALID_SORT_FIELD"},
+        )
+    sort_col = getattr(Employee, sort_by, None) if sort_by else None
+    if sort_col is not None:
+        if sort_order and sort_order.lower() == "asc":
+            query = query.order_by(sort_col.asc())
+        else:
+            query = query.order_by(sort_col.desc())
+
+    query = query.offset(offset).limit(limit)
+    result = await db.execute(query)
+    employees = result.scalars().all()
+
+    return EmployeeListResponse(total=total, limit=limit, offset=offset, data=employees)
+
+
+@router.get("/search", response_model=EmployeeListResponse)
+async def search_employees(
+    q: Optional[str] = Query(None, description="General search query (name, email, employee_id)"),
+    department: Optional[str] = Query(None, description="Filter by department"),
+    status: Optional[str] = Query(None, description="ACTIVE or INACTIVE"),
+    employee_id: Optional[str] = Query(None, description="Filter by employee ID"),
+    email: Optional[str] = Query(None, description="Filter by email"),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    sort_by: Optional[str] = Query("created_at"),
+    sort_order: Optional[str] = Query("desc"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Dedicated search endpoint for employees with name, ID, email, department, status filters."""
+    query = select(Employee)
+
+    if q:
+        query = query.where(
+            or_(
+                Employee.name.ilike(f"%{q}%"),
+                Employee.email.ilike(f"%{q}%"),
+                Employee.employee_id.ilike(f"%{q}%"),
+            )
+        )
+    if employee_id:
+        query = query.where(Employee.employee_id.ilike(f"%{employee_id}%"))
+    if email:
+        query = query.where(Employee.email.ilike(f"%{email}%"))
+    if department:
+        query = query.where(Employee.department.ilike(f"%{department}%"))
+    if status:
+        try:
+            emp_status_val = EmployeeStatus(status.upper())
+            query = query.where(Employee.status == emp_status_val)
+        except ValueError:
+            pass
+
+    # Count
+    count_query = select(func.count()).select_from(query.subquery())
+    total = (await db.execute(count_query)).scalar() or 0
+
+    # Sort — whitelist check
+    if sort_by and sort_by not in ALLOWED_SORT_FIELDS:
+        raise HTTPException(
+            status_code=400,
+            detail={"success": False, "message": f"Invalid sort_by value. Supported: {sorted(ALLOWED_SORT_FIELDS)}", "error_code": "INVALID_SORT_FIELD"},
+        )
     sort_col = getattr(Employee, sort_by, None) if sort_by else None
     if sort_col is not None:
         if sort_order and sort_order.lower() == "asc":
